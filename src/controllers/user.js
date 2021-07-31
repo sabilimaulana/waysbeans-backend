@@ -29,7 +29,7 @@ exports.login = async (req, res) => {
       }
 
       const token = jwt.sign({ email, id: result.id }, JWT_KEY, {
-        expiresIn: "1h",
+        expiresIn: "6h",
       });
       res.status(200).json({
         status: "Success",
@@ -79,7 +79,7 @@ exports.register = async (req, res) => {
       }).then((result) => {
         // console.log(result);
         const token = jwt.sign({ email, id: result.id }, JWT_KEY, {
-          expiresIn: "1h",
+          expiresIn: "6h",
         });
 
         res.status(200).json({

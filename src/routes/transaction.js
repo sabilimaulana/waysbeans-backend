@@ -8,6 +8,7 @@ const {
   getOrder,
   getHistory,
   getTransactionsByOwnerId,
+  addTransactionTwo,
 } = require("../controllers/transaction");
 const checkAuth = require("../middleware/checkAuth");
 
@@ -34,23 +35,25 @@ router.post(
   addTransaction
 );
 
+// router.post("/transactiontwo", checkAuth, addTransactionTwo);
+
 router.get("/transactions", getAllTransactions);
 
 router.patch(
   "/transaction/:id",
   checkAuth,
-  upload.single("proofImage"),
+  upload.single("attachment"),
   updateTransaction
 );
 
-router.get("/transaction/:id", getTransactionById);
+// router.get("/transaction/:id", getTransactionById);
 
 // Opsional
 // untuk user
-router.get("/transactions/order", checkAuth, getOrder);
+// router.get("/transactions/order", checkAuth, getOrder);
 
-router.get("/transactions/history", checkAuth, getHistory);
+// router.get("/transactions/history", checkAuth, getHistory);
 
-router.get("/transactions/:ownerId", checkAuth, getTransactionsByOwnerId);
+// router.get("/transactions/:ownerId", checkAuth, getTransactionsByOwnerId);
 
 module.exports = router;

@@ -29,18 +29,6 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.STRING,
       defaultValue: "",
     },
-    // urlSecondImage: {
-    //   type: DataTypes.STRING,
-    //   defaultValue: "",
-    // },
-    // urlThirdImage: {
-    //   type: DataTypes.STRING,
-    //   defaultValue: "",
-    // },
-    // urlFourthImage: {
-    //   type: DataTypes.STRING,
-    //   defaultValue: "",
-    // },
   });
   // City.hasOne(Property);
   // Property.belongsTo(City);

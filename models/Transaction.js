@@ -45,13 +45,6 @@ module.exports = (sequelize, DataTypes) => {
         notEmpty: true,
       },
     },
-    orderQuantity: {
-      type: DataTypes.STRING,
-      allowNull: false,
-      validate: {
-        notEmpty: true,
-      },
-    },
 
     status: {
       type: DataTypes.STRING,
@@ -67,9 +60,10 @@ module.exports = (sequelize, DataTypes) => {
   // Property.belongsTo(City);
   Transaction.associate = (models) => {
     Transaction.belongsTo(models.User, { foreignKey: "userId" }); // If only one portfolio per user
-    // Transaction.belongsTo(models.User, { foreignKey: "ownerId" }); // If only one portfolio per user
+    Transaction.hasMany(models.TransactionProduct); // If only one portfolio per user
+    // Transaction.belongsTo(models.Product, { foreignKey: "productId" }); // If only one portfolio per user
 
-    Transaction.belongsTo(models.Product, { foreignKey: "productId" }); // If only one portfolio per user
+    // Transaction.belongsTo(models.User, { foreignKey: "ownerId" }); // If only one portfolio per user
   };
   return Transaction;
 };
