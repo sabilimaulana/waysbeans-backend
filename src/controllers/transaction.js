@@ -113,7 +113,7 @@ exports.getAllTransactions = async (req, res) => {
     const result = await db.Transaction.findAll({
       order: [["id", "DESC"]],
       attributes: {
-        exclude: ["createdAt", "updatedAt", "productId", "userId"],
+        exclude: ["updatedAt", "userId"],
       },
       include: [
         {
@@ -193,18 +193,19 @@ exports.updateTransaction = async (req, res) => {
       })
         .then(async (result) => {
           if (status === "Approved") {
-            const product = await db.Product.findOne({
-              where: {
-                id: result.productId,
-              },
-            });
+            // Mengurangi stock dari masing-masing barang(product)
+            result.TransactionProducts.map(async (transactionProduct) => {
+              const result = await db.Product.findOne({
+                where: { id: transactionProduct.ProductId },
+              });
 
-            await db.Product.update(
-              {
-                stock: +product.stock - +result.orderQuantity,
-              },
-              { where: { id: product.id } }
-            );
+              await db.Product.update(
+                {
+                  stock: +result.stock - +transactionProduct.orderQuantity,
+                },
+                { where: { id: transactionProduct.ProductId } }
+              );
+            });
           }
 
           res.status(200).json({
@@ -308,64 +309,44 @@ exports.updateTransaction = async (req, res) => {
 //   }
 // };
 
-// exports.getTransactionById = async (req, res) => {
-//   const { id } = req.params;
+exports.getTransactionById = async (req, res) => {
+  const { id } = req.params;
 
-//   try {
-//     const result = await db.Transaction.findOne({
-//       where: {
-//         id,
-//       },
-//       attributes: {
-//         exclude: ["createdAt", "updatedAt", "propertyId"],
-//       },
-//       include: [
-//         {
-//           model: Property,
-//           include: [
-//             {
-//               model: City,
-//               attributes: { exclude: ["createdAt", "updatedAt"] },
-//             },
-//           ],
-//           attributes: { exclude: ["createdAt", "updatedAt", "cityId"] },
-//         },
-//         // {
-//         //   model: User,
-//         //   attributes: { exclude: ["createdAt", "updatedAt", "password"] },
-//         // },
-//       ],
-//     });
+  try {
+    const result = await db.Transaction.findOne({
+      include: [
+        {
+          model: db.TransactionProduct,
+          attributes: { exclude: ["createdAt", "updatedAt"] },
+        },
+        {
+          model: db.User,
+          attributes: { exclude: ["createdAt", "updatedAt", "password"] },
+        },
+      ],
+      where: { id },
+      attributes: {
+        exclude: ["userId"],
+      },
+    });
 
-//     if (!result) {
-//       res.status(400).json({
-//         message:
-//           "Get transaction detail by id is failed because id doesn't exist",
-//       });
-//     }
+    if (!result) {
+      return res.status(400).json({
+        message:
+          "Get transaction detail by id is failed because id doesn't exist",
+      });
+    }
 
-//     const resultUser = await User.findOne({
-//       where: { id: result.userId },
-//       attributes: { exclude: ["createdAt", "updatedAt", "password"] },
-//     });
-//     const resultOwner = await User.findOne({
-//       where: { id: result.ownerId },
-//       attributes: { exclude: ["createdAt", "updatedAt", "password"] },
-//     });
-
-//     result.dataValues.userData = resultUser;
-//     result.dataValues.ownerData = resultOwner;
-
-//     res.status(200).json({
-//       message: "Get transaction detail by id succesfully",
-//       data: result,
-//     });
-//   } catch (error) {
-//     res
-//       .status(500)
-//       .json({ status: "Failed", message: "Internal server error", error });
-//   }
-// };
+    res.status(200).json({
+      message: "Get transaction detail by id succesfully",
+      data: result,
+    });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ status: "Failed", message: "Internal server error", error });
+  }
+};
 
 // // Opsional
 // exports.getTransactionsByOwnerId = async (req, res) => {
@@ -423,50 +404,51 @@ exports.updateTransaction = async (req, res) => {
 //   }
 // };
 
-// exports.getOrder = async (req, res) => {
-//   try {
-//     const { userId } = req;
+exports.getOrder = async (req, res) => {
+  try {
+    const { userId } = req;
 
-//     const result = await db.Transaction.findAll({
-//       where: {
-//         userId,
-//       },
-//       include: [{ model: db.Product }, { model: db.User }],
-//       order: [["id", "DESC"]],
-//     });
+    const result = await db.Transaction.findAll({
+      where: {
+        userId,
+      },
+      include: [{ model: db.TransactionProduct }, { model: db.User }],
+      order: [["id", "DESC"]],
+    });
 
-//     // const newResult = await Promise.all(
-//     //   result.map(async (transaction) => {
-//     //     const resultUser = await User.findOne({
-//     //       where: { id: transaction.userId },
-//     //       attributes: { exclude: ["createdAt", "updatedAt", "password"] },
-//     //     });
-//     //     const resultOwner = await User.findOne({
-//     //       where: { id: transaction.ownerId },
-//     //       attributes: { exclude: ["createdAt", "updatedAt", "password"] },
-//     //     });
-//     //     transaction.dataValues.userData = await resultUser;
-//     //     transaction.dataValues.ownerData = await resultOwner;
-//     //     if (transaction.dataValues.attachment) {
-//     //       transaction.dataValues.attachment =
-//     //         BASE_URL + transaction.dataValues.attachment;
-//     //     }
+    // const newResult = await Promise.all(
+    //   result.map(async (transaction) => {
+    //     const resultUser = await User.findOne({
+    //       where: { id: transaction.userId },
+    //       attributes: { exclude: ["createdAt", "updatedAt", "password"] },
+    //     });
+    //     const resultOwner = await User.findOne({
+    //       where: { id: transaction.ownerId },
+    //       attributes: { exclude: ["createdAt", "updatedAt", "password"] },
+    //     });
+    //     transaction.dataValues.userData = await resultUser;
+    //     transaction.dataValues.ownerData = await resultOwner;
+    //     if (transaction.dataValues.attachment) {
+    //       transaction.dataValues.attachment =
+    //         BASE_URL + transaction.dataValues.attachment;
+    //     }
 
-//     //     return transaction;
-//     //   })
-//     // );
-//     // console.log(result);
+    //     return transaction;
+    //   })
+    // );
+    // console.log(result);
 
-//     return res.status(200).json({
-//       message: `Get order with user id: ${userId} successfully`,
-//       data: result,
-//     });
-//   } catch (error) {
-//     res
-//       .status(500)
-//       .json({ status: "Failed", message: "Internal server error", error });
-//   }
-// };
+    return res.status(200).json({
+      message: `Get order with user id: ${userId} successfully`,
+      data: result,
+    });
+  } catch (error) {
+    console.log(error);
+    res
+      .status(500)
+      .json({ status: "Failed", message: "Internal server error", error });
+  }
+};
 
 // exports.getHistory = async (req, res) => {
 //   try {

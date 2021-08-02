@@ -46,11 +46,11 @@ router.patch(
   updateTransaction
 );
 
-// router.get("/transaction/:id", getTransactionById);
+router.get("/transaction/:id", getTransactionById);
 
 // Opsional
 // untuk user
-// router.get("/transactions/order", checkAuth, getOrder);
+router.get("/transactions/order", checkAuth, getOrder);
 
 // router.get("/transactions/history", checkAuth, getHistory);
 
