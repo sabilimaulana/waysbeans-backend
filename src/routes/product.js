@@ -4,11 +4,10 @@ const {
   getAllProducts,
   addProduct,
   getProduct,
+  deleteProduct,
+  updateProduct,
 } = require("../controllers/product");
-// const { User } = require("../../models");
 const multer = require("multer");
-
-// Harusnya ini ada di .env
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -30,6 +29,10 @@ router.get("/products", getAllProducts);
 
 router.get("/product/:id", getProduct);
 
+router.delete("/product/:id", checkAuth, deleteProduct);
+
 router.post("/product", checkAuth, upload.single("photo"), addProduct);
+
+router.patch("/product/:id", checkAuth, upload.single("photo"), updateProduct);
 
 module.exports = router;

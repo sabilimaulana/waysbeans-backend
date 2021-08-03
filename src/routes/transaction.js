@@ -28,6 +28,7 @@ const upload = multer({
 
 const router = Router();
 
+// Untuk membuat transaksi baru
 router.post(
   "/transaction",
   checkAuth,
@@ -35,10 +36,10 @@ router.post(
   addTransaction
 );
 
-// router.post("/transactiontwo", checkAuth, addTransactionTwo);
-
+// Mendapatkan semua daftar transaksi
 router.get("/transactions", getAllTransactions);
 
+// Mengupdate transaksi
 router.patch(
   "/transaction/:id",
   checkAuth,
@@ -46,14 +47,11 @@ router.patch(
   updateTransaction
 );
 
+// Mendapatkan satu data transaksi
 router.get("/transaction/:id", getTransactionById);
 
 // Opsional
 // untuk user
 router.get("/transactions/order", checkAuth, getOrder);
-
-// router.get("/transactions/history", checkAuth, getHistory);
-
-// router.get("/transactions/:ownerId", checkAuth, getTransactionsByOwnerId);
 
 module.exports = router;

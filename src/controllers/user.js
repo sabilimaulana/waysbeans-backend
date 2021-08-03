@@ -119,11 +119,14 @@ exports.getProfile = async (req, res) => {
       },
     });
 
+    const userCart = await db.Cart.findAll({ where: { userId } });
+
+    user.dataValues.cart = userCart;
+
     // console.log(user);
 
     res.status(200).json({
       status: "Success",
-      // message: "Add user to database successfully",
       data: {
         user,
       },
