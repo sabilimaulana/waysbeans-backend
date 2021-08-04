@@ -141,6 +141,8 @@ exports.getAllTransactions = async (req, res) => {
 exports.updateTransaction = async (req, res) => {
   const { id } = req.params;
 
+  const { userId } = req;
+
   const {
     name,
     email,
@@ -153,161 +155,87 @@ exports.updateTransaction = async (req, res) => {
     zipCode,
   } = req.body;
 
-  try {
-    const result = await db.Transaction.update(
-      {
-        name,
-        email,
-        phone,
-        address,
-        total,
-        status,
-        productId,
-        orderQuantity,
-        zipCode,
-        attachment: req.file?.path,
-      },
-      {
-        where: { id },
+  if (status === "On Process")
+    try {
+      const user = await db.User.findOne({ where: { id: userId } });
+
+      if (user.listAs !== "Seller") {
+        return res
+          .status(400)
+          .json({ status: "Failed", message: "You are not the admin." });
       }
-    );
 
-    if (result[0] === 0) {
-      res.status(400).json({ message: "Id transaction is doesn't exist" });
-    } else {
-      db.Transaction.findOne({
-        include: [
-          {
-            model: db.TransactionProduct,
-            attributes: { exclude: ["createdAt", "updatedAt"] },
-          },
-          {
-            model: db.User,
-            attributes: { exclude: ["createdAt", "updatedAt", "password"] },
-          },
-        ],
-        where: { id },
-        attributes: {
-          exclude: ["userId"],
+      const result = await db.Transaction.update(
+        {
+          name,
+          email,
+          phone,
+          address,
+          total,
+          status,
+          productId,
+          orderQuantity,
+          zipCode,
+          attachment: req.file?.path,
         },
-      })
-        .then(async (result) => {
-          if (status === "Approved") {
-            // Mengurangi stock dari masing-masing barang(product)
-            result.TransactionProducts.map(async (transactionProduct) => {
-              const result = await db.Product.findOne({
-                where: { id: transactionProduct.ProductId },
-              });
+        {
+          where: { id },
+        }
+      );
 
-              await db.Product.update(
-                {
-                  stock: +result.stock - +transactionProduct.orderQuantity,
-                },
-                { where: { id: transactionProduct.ProductId } }
-              );
-            });
-          }
-
-          res.status(200).json({
-            message: `Transaction with id ${id} has been updated`,
-            data: result,
-          });
+      if (result[0] === 0) {
+        res.status(400).json({ message: "Id transaction is doesn't exist" });
+      } else {
+        db.Transaction.findOne({
+          include: [
+            {
+              model: db.TransactionProduct,
+              attributes: { exclude: ["createdAt", "updatedAt"] },
+            },
+            {
+              model: db.User,
+              attributes: { exclude: ["createdAt", "updatedAt", "password"] },
+            },
+          ],
+          where: { id },
+          attributes: {
+            exclude: ["userId"],
+          },
         })
-        .catch((error) => {
-          console.log(error);
-          res.status(400).json({ error });
-        });
+          .then(async (result) => {
+            if (status === "On Process") {
+              // Mengurangi stock dari masing-masing barang(product)
+              result.TransactionProducts.map(async (transactionProduct) => {
+                const result = await db.Product.findOne({
+                  where: { id: transactionProduct.ProductId },
+                });
+
+                await db.Product.update(
+                  {
+                    stock: +result.stock - +transactionProduct.orderQuantity,
+                  },
+                  { where: { id: transactionProduct.ProductId } }
+                );
+              });
+            }
+
+            res.status(200).json({
+              message: `Transaction with id ${id} has been updated`,
+              data: result,
+            });
+          })
+          .catch((error) => {
+            console.log(error);
+            res.status(400).json({ error });
+          });
+      }
+    } catch (error) {
+      console.log(error);
+      res
+        .status(500)
+        .json({ status: "Failed", message: "Internal server error", error });
     }
-  } catch (error) {
-    console.log(error);
-    res
-      .status(500)
-      .json({ status: "Failed", message: "Internal server error", error });
-  }
 };
-
-// exports.addTransaction = async (req, res) => {
-//   try {
-//     // const transactionValidate = await authTransaction.validateAsync(req.body);
-//     // console.log(transactionValidate);
-//     const {
-//       name,
-//       email,
-//       phone,
-//       address,
-//       total,
-//       status,
-//       productId,
-//       zipCode,
-//       orderQuantity,
-//     } = req.body;
-
-//     const { userId } = req;
-
-//     console.log(req.body);
-
-//     if (!req.file) {
-//       return res
-//         .status(400)
-//         .json({ status: "Failed", message: "attachment is required" });
-//     }
-
-//     const result = await Transaction.create({
-//       name,
-//       email,
-//       phone,
-//       address,
-//       total,
-//       status,
-//       productId,
-//       userId,
-//       orderQuantity,
-//       zipCode,
-//       attachment: req.file?.path,
-//     });
-
-//     const resultAftedCreated = await Transaction.findOne({
-//       include: [
-//         {
-//           model: db.Product,
-//           attributes: { exclude: ["createdAt", "updatedAt"] },
-//         },
-//         {
-//           model: db.User,
-//           attributes: { exclude: ["createdAt", "updatedAt", "password"] },
-//         },
-//       ],
-//       where: { id: result.id },
-//       attributes: {
-//         exclude: ["productId", "userId"],
-//       },
-//     });
-
-//     await db.Cart.destroy({ where: { userId } });
-
-//     // const resultUser = await db.User.findOne({
-//     //   where: { id: userId },
-//     //   attributes: { exclude: ["createdAt", "updatedAt", "password"] },
-//     // });
-
-//     // resultAftedCreated.dataValues.userData = resultUser;
-
-//     res.status(200).json({
-//       message: "Add transaction to database successfully",
-//       data: { transaction: resultAftedCreated },
-//     });
-//   } catch (error) {
-//     if (error.isJoi) {
-//       res.status(422).json({ error: error.details[0].message });
-//     } else {
-//       res
-//         .status(500)
-//         .json({ status: "Failed", message: "Internal server error", error });
-
-//       console.log(error);
-//     }
-//   }
-// };
 
 exports.getTransactionById = async (req, res) => {
   const { id } = req.params;
@@ -348,62 +276,6 @@ exports.getTransactionById = async (req, res) => {
   }
 };
 
-// // Opsional
-// exports.getTransactionsByOwnerId = async (req, res) => {
-//   try {
-//     const { userId } = req;
-//     const { ownerId } = req.params;
-
-//     if (+userId !== +ownerId) {
-//       return res
-//         .status(401)
-//         .json({ status: "Failed", message: "You're not the owner" });
-//     }
-
-//     const result = await Transaction.findAll({
-//       where: {
-//         ownerId,
-//         [Op.or]: [
-//           { status: "Waiting Approve" },
-//           { status: "Cancel" },
-//           { status: "Approved" },
-//         ],
-//       },
-//       include: { model: Property },
-//     });
-
-//     const newResult = await Promise.all(
-//       result.map(async (transaction) => {
-//         const resultUser = await User.findOne({
-//           where: { id: transaction.userId },
-//           attributes: { exclude: ["createdAt", "updatedAt", "password"] },
-//         });
-//         const resultOwner = await User.findOne({
-//           where: { id: transaction.ownerId },
-//           attributes: { exclude: ["createdAt", "updatedAt", "password"] },
-//         });
-//         transaction.dataValues.userData = await resultUser;
-//         transaction.dataValues.ownerData = await resultOwner;
-//         if (transaction.dataValues.attachment) {
-//           transaction.dataValues.attachment =
-//             BASE_URL + transaction.dataValues.attachment;
-//         }
-//         return transaction;
-//       })
-//     );
-
-//     return res.status(200).json({
-//       status: "Success",
-//       message: `Get transactions by ownerId: ${ownerId} successfully`,
-//       data: newResult,
-//     });
-//   } catch (error) {
-//     res
-//       .status(500)
-//       .json({ status: "Failed", message: "Internal server error", error });
-//   }
-// };
-
 exports.getOrder = async (req, res) => {
   try {
     const { userId } = req;
@@ -415,28 +287,6 @@ exports.getOrder = async (req, res) => {
       include: [{ model: db.TransactionProduct }, { model: db.User }],
       order: [["id", "DESC"]],
     });
-
-    // const newResult = await Promise.all(
-    //   result.map(async (transaction) => {
-    //     const resultUser = await User.findOne({
-    //       where: { id: transaction.userId },
-    //       attributes: { exclude: ["createdAt", "updatedAt", "password"] },
-    //     });
-    //     const resultOwner = await User.findOne({
-    //       where: { id: transaction.ownerId },
-    //       attributes: { exclude: ["createdAt", "updatedAt", "password"] },
-    //     });
-    //     transaction.dataValues.userData = await resultUser;
-    //     transaction.dataValues.ownerData = await resultOwner;
-    //     if (transaction.dataValues.attachment) {
-    //       transaction.dataValues.attachment =
-    //         BASE_URL + transaction.dataValues.attachment;
-    //     }
-
-    //     return transaction;
-    //   })
-    // );
-    // console.log(result);
 
     return res.status(200).json({
       message: `Get order with user id: ${userId} successfully`,
