@@ -11,6 +11,7 @@ const BASE_URL = process.env.BASE_URL;
 
 exports.addTransaction = async (req, res) => {
   try {
+    console.log("Sebelum diconvert", req.body);
     if (typeof req.body.products === "string") {
       req.body.products = JSON.parse(req.body.products);
 
@@ -20,6 +21,7 @@ exports.addTransaction = async (req, res) => {
           .json({ status: "Failed", message: "attachment is required" });
       }
     }
+    console.log("Sesuai diconvert", req.body);
 
     const { userId } = req;
 
@@ -155,86 +157,87 @@ exports.updateTransaction = async (req, res) => {
     zipCode,
   } = req.body;
 
-  if (status === "On Process")
-    try {
-      const user = await db.User.findOne({ where: { id: userId } });
+  if (status === "On Process") {
+    const user = await db.User.findOne({ where: { id: userId } });
 
-      if (user.listAs !== "Seller") {
-        return res
-          .status(400)
-          .json({ status: "Failed", message: "You are not the admin." });
-      }
-
-      const result = await db.Transaction.update(
-        {
-          name,
-          email,
-          phone,
-          address,
-          total,
-          status,
-          productId,
-          orderQuantity,
-          zipCode,
-          attachment: req.file?.path,
-        },
-        {
-          where: { id },
-        }
-      );
-
-      if (result[0] === 0) {
-        res.status(400).json({ message: "Id transaction is doesn't exist" });
-      } else {
-        db.Transaction.findOne({
-          include: [
-            {
-              model: db.TransactionProduct,
-              attributes: { exclude: ["createdAt", "updatedAt"] },
-            },
-            {
-              model: db.User,
-              attributes: { exclude: ["createdAt", "updatedAt", "password"] },
-            },
-          ],
-          where: { id },
-          attributes: {
-            exclude: ["userId"],
-          },
-        })
-          .then(async (result) => {
-            if (status === "On Process") {
-              // Mengurangi stock dari masing-masing barang(product)
-              result.TransactionProducts.map(async (transactionProduct) => {
-                const result = await db.Product.findOne({
-                  where: { id: transactionProduct.ProductId },
-                });
-
-                await db.Product.update(
-                  {
-                    stock: +result.stock - +transactionProduct.orderQuantity,
-                  },
-                  { where: { id: transactionProduct.ProductId } }
-                );
-              });
-            }
-
-            res.status(200).json({
-              message: `Transaction with id ${id} has been updated`,
-              data: result,
-            });
-          })
-          .catch((error) => {
-            console.log(error);
-            res.status(400).json({ error });
-          });
-      }
-    } catch (error) {
-      console.log(error);
-      res
-        .status(500)
-        .json({ status: "Failed", message: "Internal server error", error });
+    if (user.listAs !== "Seller") {
+      return res
+        .status(400)
+        .json({ status: "Failed", message: "You are not the admin." });
     }
+  }
+
+  try {
+    const result = await db.Transaction.update(
+      {
+        name,
+        email,
+        phone,
+        address,
+        total,
+        status,
+        productId,
+        orderQuantity,
+        zipCode,
+        attachment: req.file?.path,
+      },
+      {
+        where: { id },
+      }
+    );
+
+    if (result[0] === 0) {
+      res.status(400).json({ message: "Id transaction is doesn't exist" });
+    } else {
+      db.Transaction.findOne({
+        include: [
+          {
+            model: db.TransactionProduct,
+            attributes: { exclude: ["createdAt", "updatedAt"] },
+          },
+          {
+            model: db.User,
+            attributes: { exclude: ["createdAt", "updatedAt", "password"] },
+          },
+        ],
+        where: { id },
+        attributes: {
+          exclude: ["userId"],
+        },
+      })
+        .then(async (result) => {
+          if (status === "On Process") {
+            // Mengurangi stock dari masing-masing barang(product)
+            result.TransactionProducts.map(async (transactionProduct) => {
+              const result = await db.Product.findOne({
+                where: { id: transactionProduct.ProductId },
+              });
+
+              await db.Product.update(
+                {
+                  stock: +result.stock - +transactionProduct.orderQuantity,
+                },
+                { where: { id: transactionProduct.ProductId } }
+              );
+            });
+          }
+
+          res.status(200).json({
+            message: `Transaction with id ${id} has been updated`,
+            data: result,
+          });
+        })
+        .catch((error) => {
+          console.log(error);
+          res.status(400).json({ error });
+        });
+    }
+  } catch (error) {
+    console.log(error);
+    res
+      .status(500)
+      .json({ status: "Failed", message: "Internal server error", error });
+  }
 };
 
 exports.getTransactionById = async (req, res) => {
