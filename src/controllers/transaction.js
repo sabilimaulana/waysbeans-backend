@@ -150,6 +150,16 @@ exports.notification = async (req, res) => {
   try {
     const statusResponse = await core.transaction.notification(req.body);
 
+    const transactionData = await db.Transaction.findOne({
+      where: {
+        id: statusResponse.order_id,
+      },
+    });
+
+    console.log(transactionData.status);
+
+    console.log(statusResponse);
+
     let orderId = statusResponse.order_id;
     let transactionStatus = statusResponse.transaction_status;
     let fraudStatus = statusResponse.fraud_status;
@@ -157,29 +167,33 @@ exports.notification = async (req, res) => {
     if (transactionStatus == "capture") {
       if (fraudStatus == "challenge") {
         updateTransaction(orderId, "Pending");
-        res.status(200);
+        return res.status(200);
       } else if (fraudStatus == "accept") {
-        updateTransaction(orderId, "Waiting Approve");
-        updateProduct(orderId);
-        res.status(200);
+        if (transactionData.status === "Pending") {
+          updateTransaction(orderId, "Waiting Approve");
+        }
+        return res.status(200);
       }
+      return res.status(200);
     } else if (transactionStatus == "settlement") {
-      updateTransaction(orderId, "Waiting Approve");
-      updateProduct(orderId);
-      res.status(200);
+      if (transactionData.status === "Pending") {
+        updateTransaction(orderId, "Waiting Approve");
+      }
+      return res.status(200);
     } else if (
       transactionStatus == "cancel" ||
       transactionStatus == "deny" ||
       transactionStatus == "expire"
     ) {
       updateTransaction(orderId, "Failed");
-      res.status(200);
+      return res.status(200);
     } else if (transactionStatus == "pending") {
       updateTransaction(orderId, "Pending");
-      res.status(200);
+      return res.status(200);
     }
+    return res.status(200);
   } catch (error) {
-    res.status(500);
+    return res.status(500);
   }
 };
 
