@@ -1,17 +1,14 @@
 // const { authTransaction } = require("../helpers/authSchema");
 const db = require("../../models");
 const { Transaction, User } = require("../../models");
-const { Op } = require("sequelize");
-const Product = require("../../models/Product");
-const { allow } = require("joi");
-const e = require("express");
+
+const midtransClient = require("midtrans-client");
 require("dotenv").config();
 
 const BASE_URL = process.env.BASE_URL;
 
 exports.addTransaction = async (req, res) => {
   try {
-    console.log("Sebelum diconvert", req.body);
     if (typeof req.body.products === "string") {
       req.body.products = JSON.parse(req.body.products);
 
@@ -21,9 +18,13 @@ exports.addTransaction = async (req, res) => {
           .json({ status: "Failed", message: "attachment is required" });
       }
     }
-    console.log("Sesuai diconvert", req.body);
 
     const { userId } = req;
+
+    const userData = await db.User.findOne({
+      where: { id: userId },
+      attributes: { exclude: ["createdAt", "updatedAt", "password"] },
+    });
 
     const { name, email, phone, address, total, status, zipCode, products } =
       req.body;
@@ -64,8 +65,6 @@ exports.addTransaction = async (req, res) => {
         attachment: req.file?.path,
       });
 
-      // console.log(result.id);
-
       const newTransactionProduct = [];
 
       await Promise.all(
@@ -97,9 +96,30 @@ exports.addTransaction = async (req, res) => {
 
       await db.Cart.destroy({ where: { userId } });
 
+      const snap = new midtransClient.Snap({
+        isProduction: false,
+        serverKey: process.env.MIDTRANS_SERVER_KEY,
+      });
+
+      const parameter = {
+        transaction_details: {
+          order_id: newResult.id,
+          gross_amount: newResult.total,
+        },
+        credit_card: {
+          secure: true,
+        },
+        customer_details: {
+          full_name: userData.fullname,
+          email: userData.email,
+        },
+      };
+
+      const payment = await snap.createTransaction(parameter);
+
       res.status(200).json({
         status: "Success",
-        data: { transaction: newResult },
+        data: { payment, transaction: newResult },
       });
     }
   } catch (error) {
@@ -108,6 +128,72 @@ exports.addTransaction = async (req, res) => {
       .status(500)
       .json({ status: "Failed", message: "Internal server error", error });
   }
+};
+
+const core = new midtransClient.CoreApi();
+
+core.apiConfig.set({
+  isProduction: false,
+  serverKey: process.env.MIDTRANS_SERVER_KEY,
+  clientKey: process.env.MIDTRANS_CLIENT_KEY,
+});
+
+/**
+ *  Handle update transaction status after notification
+ * from midtrans webhook
+ * @param {string} status
+ * @param {transactionId} transactionId
+ */
+
+// Notifikasi untuk payment gateway
+exports.notification = async (req, res) => {
+  try {
+    const statusResponse = await core.transaction.notification(req.body);
+
+    let orderId = statusResponse.order_id;
+    let transactionStatus = statusResponse.transaction_status;
+    let fraudStatus = statusResponse.fraud_status;
+
+    if (transactionStatus == "capture") {
+      if (fraudStatus == "challenge") {
+        updateTransaction(orderId, "Pending");
+        res.status(200);
+      } else if (fraudStatus == "accept") {
+        updateTransaction(orderId, "Waiting Approve");
+        updateProduct(orderId);
+        res.status(200);
+      }
+    } else if (transactionStatus == "settlement") {
+      updateTransaction(orderId, "Waiting Approve");
+      updateProduct(orderId);
+      res.status(200);
+    } else if (
+      transactionStatus == "cancel" ||
+      transactionStatus == "deny" ||
+      transactionStatus == "expire"
+    ) {
+      updateTransaction(orderId, "Failed");
+      res.status(200);
+    } else if (transactionStatus == "pending") {
+      updateTransaction(orderId, "Pending");
+      res.status(200);
+    }
+  } catch (error) {
+    res.status(500);
+  }
+};
+
+const updateTransaction = async (id, status) => {
+  await db.Transaction.update(
+    {
+      status,
+    },
+    {
+      where: {
+        id,
+      },
+    }
+  );
 };
 
 exports.getAllTransactions = async (req, res) => {

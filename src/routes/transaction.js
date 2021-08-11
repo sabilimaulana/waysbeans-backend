@@ -9,6 +9,7 @@ const {
   getHistory,
   getTransactionsByOwnerId,
   addTransactionTwo,
+  notification,
 } = require("../controllers/transaction");
 const checkAuth = require("../middleware/checkAuth");
 
@@ -35,6 +36,8 @@ router.post(
   upload.single("attachment"),
   addTransaction
 );
+
+router.post("/notification", notification);
 
 // Mendapatkan semua daftar transaksi
 router.get("/transactions", getAllTransactions);

@@ -1,5 +1,7 @@
 #Custom
 /uploads
+ngrok
+
 # Logs
 logs
 *.log
