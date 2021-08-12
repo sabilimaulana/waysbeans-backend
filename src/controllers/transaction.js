@@ -1,6 +1,5 @@
 // const { authTransaction } = require("../helpers/authSchema");
 const db = require("../../models");
-const { Transaction, User } = require("../../models");
 
 const midtransClient = require("midtrans-client");
 require("dotenv").config();
@@ -53,7 +52,7 @@ exports.addTransaction = async (req, res) => {
       });
     } else {
       // Transaksinya dibuat dulu
-      const transactionResult = await Transaction.create({
+      const transactionResult = await db.Transaction.create({
         name,
         email,
         phone,
@@ -155,10 +154,6 @@ exports.notification = async (req, res) => {
         id: statusResponse.order_id,
       },
     });
-
-    console.log(transactionData.status);
-
-    console.log(statusResponse);
 
     let orderId = statusResponse.order_id;
     let transactionStatus = statusResponse.transaction_status;

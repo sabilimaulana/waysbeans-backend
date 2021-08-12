@@ -32,13 +32,7 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.STRING,
       defaultValue: "",
     },
-    // address: {
-    //   type: DataTypes.STRING,
-    //   allowNull: false,
-    //   validate: {
-    //     notEmpty: true,
-    //   },
-    // },
+
     listAs: {
       type: DataTypes.STRING,
       allowNull: false,
@@ -46,24 +40,6 @@ module.exports = (sequelize, DataTypes) => {
         notEmpty: true,
       },
     },
-    // gender: {
-    //   type: DataTypes.STRING,
-    //   allowNull: false,
-    //   validate: {
-    //     notEmpty: true,
-    //   },
-    // },
-    // phone: {
-    //   type: DataTypes.STRING,
-    //   allowNull: false,
-    //   validate: {
-    //     notEmpty: true,
-    //   },
-    // },
-    // urlImage: {
-    //   type: DataTypes.STRING,
-    //   defaultValue: "",
-    // },
   });
 
   // User.associate = (models) => {

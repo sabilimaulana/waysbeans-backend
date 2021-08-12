@@ -1,5 +1,4 @@
 const db = require("../../models");
-const { User } = require("../../models");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 // const { Op } = require("sequelize");
@@ -71,7 +70,7 @@ exports.register = async (req, res) => {
     if (result) {
       res.status(401).json({ message: "Email is already exist" });
     } else {
-      User.create({
+      db.User.create({
         password: hashedPassword,
         fullname,
         email,

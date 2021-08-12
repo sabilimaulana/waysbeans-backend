@@ -1,11 +1,6 @@
-const e = require("express");
 const { Router } = require("express");
-// const { User } = require("../../models");
-const jwt = require("jsonwebtoken");
-const multer = require("multer");
 const checkAuth = require("../middleware/checkAuth");
 const db = require("../../models");
-const Product = require("../../models/Product");
 
 // Harusnya ini ada di .env
 

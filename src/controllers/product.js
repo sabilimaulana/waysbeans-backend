@@ -1,6 +1,5 @@
-const { authProperty, authProduct } = require("../helpers/authSchema");
+const { authProduct } = require("../helpers/authSchema");
 const db = require("../../models");
-const { Product } = require("../../models");
 
 require("dotenv").config();
 

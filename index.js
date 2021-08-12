@@ -33,9 +33,14 @@ app.use("/", (req, res) => {
 //   });
 // });
 
-db.sequelize.sync().then((req) => {
-  app.listen(PORT, () => {
-    console.log("App is running on localhost on ", PORT);
-    // console.log(process.env.JWT_KEY);
-  });
+// db.sequelize.sync().then((req) => {
+//   app.listen(PORT, () => {
+//     console.log("App is running on localhost on ", PORT);
+//     // console.log(process.env.JWT_KEY);
+//   });
+// });
+
+app.listen(PORT, () => {
+  console.log("App is running on localhost on ", PORT);
+  // console.log(process.env.JWT_KEY);
 });
