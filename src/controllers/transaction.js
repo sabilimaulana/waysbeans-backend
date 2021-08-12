@@ -117,7 +117,10 @@ exports.addTransaction = async (req, res) => {
         },
       };
 
-      const payment = await snap.createTransaction(JSON.stringify(parameter));
+      console.log("parameter", parameter);
+      const payment = await snap.createTransaction(parameter);
+      console.log("payment", payment);
+      console.log("newResult", newResult);
 
       res.status(200).json({
         status: "Success",
