@@ -100,6 +100,7 @@ exports.addProduct = async (req, res) => {
       data: result,
     });
   } catch (error) {
+    console.log(error);
     if (error.isJoi) {
       res.status(422).json({ error: error.details[0].message });
     } else {
