@@ -55,7 +55,7 @@ module.exports = {
         },
       },
       TransactionId: {
-        type: Sequelize.INTEGER,
+        type: Sequelize.UUID,
         references: {
           model: "Transactions",
           key: "id",
