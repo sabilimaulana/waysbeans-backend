@@ -100,6 +100,8 @@ exports.addTransaction = async (req, res) => {
         serverKey: process.env.MIDTRANS_SERVER_KEY,
       });
 
+      console.log("server key", process.env.MIDTRANS_SERVER_KEY);
+
       const parameter = {
         transaction_details: {
           order_id: newResult.id,
@@ -114,7 +116,7 @@ exports.addTransaction = async (req, res) => {
         },
       };
 
-      const payment = await snap.createTransaction(parameter);
+      const payment = await snap.createTransaction(JSON.stringify(parameter));
 
       res.status(200).json({
         status: "Success",
