@@ -15,6 +15,12 @@ module.exports = (sequelize, DataTypes) => {
   }
   Transaction.init(
     {
+      id: {
+        allowNull: false,
+        primaryKey: true,
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
+      },
       name: DataTypes.STRING,
       total: DataTypes.STRING,
       email: DataTypes.STRING,
