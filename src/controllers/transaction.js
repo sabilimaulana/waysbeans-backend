@@ -12,11 +12,11 @@ exports.addTransaction = async (req, res) => {
     if (typeof req.body.products === "string") {
       req.body.products = JSON.parse(req.body.products);
 
-      if (!req.file) {
-        return res
-          .status(400)
-          .json({ status: "Failed", message: "attachment is required" });
-      }
+      // if (!req.file) {
+      //   return res
+      //     .status(400)
+      //     .json({ status: "Failed", message: "attachment is required" });
+      // }
     }
 
     const { userId } = req;
@@ -62,7 +62,7 @@ exports.addTransaction = async (req, res) => {
         status,
         userId,
         zipCode,
-        attachment: req.file?.path,
+        // attachment: req.file?.path,
       });
 
       const newTransactionProduct = [];
