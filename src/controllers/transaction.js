@@ -101,6 +101,7 @@ exports.addTransaction = async (req, res) => {
       });
 
       console.log("server key", process.env.MIDTRANS_SERVER_KEY);
+      console.log("client key", process.env.MIDTRANS_CLIENT_KEY);
 
       const parameter = {
         transaction_details: {
