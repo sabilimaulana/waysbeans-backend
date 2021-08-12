@@ -115,7 +115,7 @@ exports.addTransaction = async (req, res) => {
         };
       });
 
-      console.log("item detail", itemDetails);
+      // console.log("item detail", itemDetails);
 
       const parameter = {
         transaction_details: {
@@ -132,9 +132,9 @@ exports.addTransaction = async (req, res) => {
         },
       };
 
-      console.log("parameter", parameter);
+      // console.log("parameter", parameter);
       const payment = await snap.createTransaction(parameter);
-      console.log("payment", payment);
+      // console.log("payment", payment);
       // console.log("newResult", newResult);
 
       res.status(200).json({
@@ -404,7 +404,7 @@ exports.getOrder = async (req, res) => {
         userId,
       },
       include: [{ model: db.TransactionProduct }, { model: db.User }],
-      order: [["id", "DESC"]],
+      order: [["createdAt", "DESC"]],
     });
 
     return res.status(200).json({
