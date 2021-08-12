@@ -103,23 +103,26 @@ exports.addTransaction = async (req, res) => {
       // console.log("server key", process.env.MIDTRANS_SERVER_KEY);
       // console.log("client key", process.env.MIDTRANS_CLIENT_KEY);
 
-      const itemDetail = newTransactionProduct.map((product) => {
+      const itemDetails = newTransactionProduct.map((product) => {
         return {
           id: product.id,
           price: product.price,
           quantity: product.orderQuantity,
           name: product.name,
+          brand: "WaysBeans",
+          category: "Coffee Beans",
+          merchant_name: "WaysBeans",
         };
       });
 
-      console.log("item detail", itemDetail);
+      console.log("item detail", itemDetails);
 
       const parameter = {
         transaction_details: {
           order_id: newResult.id,
           gross_amount: newResult.total,
         },
-        item_detail: itemDetail,
+        item_details: itemDetails,
         credit_card: {
           secure: true,
         },
@@ -129,9 +132,9 @@ exports.addTransaction = async (req, res) => {
         },
       };
 
-      // console.log("parameter", parameter);
+      console.log("parameter", parameter);
       const payment = await snap.createTransaction(parameter);
-      // console.log("payment", payment);
+      console.log("payment", payment);
       // console.log("newResult", newResult);
 
       res.status(200).json({
@@ -226,7 +229,7 @@ const updateTransaction = async (id, status) => {
 exports.getAllTransactions = async (req, res) => {
   try {
     const result = await db.Transaction.findAll({
-      order: [["id", "DESC"]],
+      order: [["createdAt", "DESC"]],
       attributes: {
         exclude: ["updatedAt", "userId"],
       },
